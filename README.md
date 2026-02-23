@@ -6,7 +6,7 @@ A clean, robust GUI for managing Arch Linux packages and AUR updates.
 ![Uptater Dashboard Preview](assets/uptater.gif)
 
 ## 📥 Downloads
-[**Download Latest Release**](https://github.com/yourusername/uptater/releases)
+[**Download Latest Release**](https://github.com/gytdoo/uptater/releases)
 
 ## 🛠️ Build Requirements
 
