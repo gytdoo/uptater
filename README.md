@@ -1,5 +1,5 @@
 # Uptater
-
+![Icon](icon.png)
 A clean, robust GUI for managing Arch Linux packages and AUR updates.
 
 ## 📸 Preview
