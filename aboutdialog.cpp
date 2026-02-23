@@ -23,8 +23,7 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent)
     iconLabel->setPixmap(iconPixmap.scaled(160, 160, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     iconLabel->setAlignment(Qt::AlignCenter);
 
-    auto *linkLabel = new QLabel("<a href='https://github.com/placeholder/uptater' style='color: #4CAF50; text-decoration: none;'>View Project on GitHub</a>", this);
-    linkLabel->setAlignment(Qt::AlignCenter);
+    auto *linkLabel = new QLabel("<a href='https://github.com/gytdoo/uptater' style='color: #4CAF50; text-decoration: none;'>View Project on GitHub</a>", this);    linkLabel->setAlignment(Qt::AlignCenter);
     linkLabel->setOpenExternalLinks(true);
 
     // --- NEW: Dynamically fetch the version set in main.cpp ---
