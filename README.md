@@ -24,7 +24,7 @@ To build **Uptater** from source, ensure the following dependencies are installe
 
 ## Building from Source
 
-Run the following commands in your terminal to compile the project:
+Run the following commands in the project directory via terminal to compile the project:
 
 ```bash
 mkdir build && cd build && cmake -B . .. && make
