@@ -14,7 +14,7 @@ source=('uptater'
         'uptater.desktop'
         'icon.png')
 
-sha256sums=('1794dd23002d052ae050bd5213e3a05c922008f92a7dd89f1eeeb4ae429fb3ec'
+sha256sums=('4e31a9cc5fbc7e7cc40083eb4f627bb1f091d7e42d03f206f04caf6184ad9cd0'
             'ee6cba820931b47d88c7e8a29eb11b933b3986237d6e650db54899dc9b1b994d'
             '04b5e5cae018cae45efccfa8d5bca866fbac724a04063ce51115cdd1608e9683')
 
