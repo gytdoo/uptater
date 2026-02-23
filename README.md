@@ -1,5 +1,7 @@
 # Uptater
-<img src="icon.png" width="128" alt="Uptater Icon">
+<p align="center">
+  <img src="icon.png" width="256" alt="Uptater Icon">
+</p>
 A clean, robust GUI for managing Arch Linux packages and AUR updates.
 
 ## 📸 Preview
