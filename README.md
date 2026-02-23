@@ -1,4 +1,4 @@
-<p align="center"># Uptater</p>
+<h1 align="center">Uptater</h1>
 <p align="center">
   <img src="icon.png" width="256" alt="Uptater Icon">
 </p>
