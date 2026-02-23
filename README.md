@@ -9,6 +9,7 @@
 
 ## 📥 Downloads
 [**Download Latest ZST or Binary**](https://github.com/gytdoo/uptater/releases)
+
 To install the ZST Arch package, run this command, replacing "uptater.pkg.tar.zst" with the file you downloaded:
 ```bash
 sudo pacman -U uptater.pkg.tar.zst
