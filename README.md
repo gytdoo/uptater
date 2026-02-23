@@ -12,7 +12,7 @@
 To install the ZST Arch package, run this command, replacing "uptater.pkg.tar.zst" with the file you downloaded:
 ```bash
 sudo pacman -U uptater.pkg.tar.zst
-
+```
 ## 🛠️ Build Requirements
 
 To build **Uptater** from source, ensure the following dependencies are installed on your system:
