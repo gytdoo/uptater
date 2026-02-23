@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0.1
+Name=Uptater
+Comment=Simple Qt app for Pacman/Yay managment
+Exec=uptater
+Icon=uptater
+Terminal=false
+Type=Application
+Categories=System;
