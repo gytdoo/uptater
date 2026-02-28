@@ -614,7 +614,6 @@ void MainWindow::onToggleOfflineUpdates(bool checked) {
 void MainWindow::onRebootSystem() { QProcess::startDetached("systemctl", {"reboot"}); }
 
 void MainWindow::setupInitialState() {
-    m_pacmanConfigManager->readConfig();
     loadCriticalPackages();
     setupYay();
     m_reflectorManager->setup();
