@@ -6,7 +6,7 @@
 
 PacmanConfigManager::PacmanConfigManager(QObject *parent) : QObject(parent)
 {
-    reset();
+    readConfig();
 }
 
 void PacmanConfigManager::reset()
