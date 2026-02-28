@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 
     // 1.0 Application Metadata
     QApplication::setApplicationName("Uptater");
-    QApplication::setApplicationVersion("1.0.1");
+    QApplication::setApplicationVersion("1.0.1.1");
     QApplication::setWindowIcon(QIcon(":/icon.png"));
 
     MainWindow window;
