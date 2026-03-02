@@ -117,6 +117,7 @@ private:
     QAction *m_yayUninstallAction;
     QAction *m_setupOfflineAction;
     QAction *m_toggleOfflineAction;
+    QAction *m_keepHistoryAction;
 
     // --- State Tracking ---
     enum class UpdateState { Idle, Checking, UpdatesAvailable };
@@ -136,6 +137,7 @@ private:
     bool m_autoCleanCache;
     bool m_checkOnStartup;
     bool m_offlineUpdateEnabled;
+    bool m_keepBashHistory;
 
     QStringList m_criticalPackages;
     QList<UpdatePackageInfo> m_cachedUpdates;
