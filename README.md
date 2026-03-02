@@ -2,7 +2,7 @@
 <p align="center">
   <img src="icon.png" width="256" alt="Uptater Icon">
 </p>
-<p align="center">A clean, robust GUI for managing Arch Linux packages and AUR updates.</p>
+<p align="center">A clean, robust Qt GUI for managing Pacman. KDE recommended!</p>
 
 ## 📸 Preview
 ![Uptater Dashboard Preview](assets/uptater.gif)
