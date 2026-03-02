@@ -18,6 +18,7 @@ public:
 
     void run(const QString& command, const QString& description, bool captureOutput, bool requiresRoot, std::function<void(QString, int)> callback = nullptr);
     bool isBusy() const { return m_isBusy; }
+    void setKeepBashHistory(bool keep) { m_keepBashHistory = keep; }
 
 signals:
     void commandStarted();
@@ -35,7 +36,7 @@ private:
     QString m_outputFile;
     QString m_exitCodeFile;
     QFileSystemWatcher* m_watcher;
-
+    bool m_keepBashHistory = false;
     bool m_isBusy;
     std::function<void(QString, int)> m_callback;
 };
