@@ -8,6 +8,19 @@
 ![Uptater Dashboard Preview](assets/uptater.gif)
 
 ## 📥 Downloads
+Install from AUR.
+
+Yay command for prebuilt:
+```bash
+yay -S uptater-bin
+```
+Yay command for building from source:
+```bash
+yay -S uptater
+```
+
+Or download and install without an AUR manager:
+
 [**Download Latest ZST or Binary**](https://github.com/gytdoo/uptater/releases)
 
 To install the ZST Arch package, run this command, replacing "uptater.pkg.tar.zst" with the file you downloaded:
