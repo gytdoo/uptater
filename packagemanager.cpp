@@ -1,10 +1,6 @@
 #include "packagemanager.h"
 #include "commandrunner.h"
 #include <QRegularExpression>
-#include <QFile>
-#include <QDir>
-#include <QFileInfo>
-#include <QTextStream>
 
 PackageManager::PackageManager(CommandRunner* runner, QObject* parent)
 : QObject(parent), m_runner(runner)
@@ -16,23 +12,6 @@ static QString stripAnsi(const QString& input) {
     QString result = input;
     result.remove(ansiRegex);
     return result;
-}
-
-QString PackageManager::writeScriptToTemp(const QString& resourcePath) {
-    QFile resFile(resourcePath);
-    if (!resFile.open(QIODevice::ReadOnly | QIODevice::Text)) return "";
-
-    QString content = QTextStream(&resFile).readAll();
-    QString tempPath = QDir::tempPath() + "/uptater_" + QFileInfo(resourcePath).fileName();
-
-    QFile outFile(tempPath);
-    if (outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream(&outFile) << content;
-        outFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
-        outFile.close();
-        return tempPath;
-    }
-    return "";
 }
 
 bool PackageManager::isCancelled(int exitCode) {
@@ -152,20 +131,97 @@ void PackageManager::repairKeyring()
     });
 }
 
-void PackageManager::installYay(const QString& variant) {
-    QString tempPath = writeScriptToTemp(":/scripts/install_yay.sh");
-    if (tempPath.isEmpty()) return;
+// --- Multi-Step Chained Operations ---
 
-    m_runner->run("bash " + tempPath + " " + variant, "Installing yay...", false, false, [this](QString, int exitCode){
-        emit operationFinished(exitCode == 0, isCancelled(exitCode));
+void PackageManager::installYay(const QString& variant) {
+    emit statusMessageChanged("Cleaning previous installations and fetching dependencies...");
+
+    // Dynamically assign dependencies: yay (source) requires 'go', the others do not
+    QString deps = (variant == "yay") ? "git base-devel go" : "git base-devel";
+    QString homeCache = QDir::homePath() + "/.cache/yay";
+
+    // Step 1: The Ultimate Clean Slate (Full uninstall + install dependencies)
+    QString step1 = QString(
+        "pacman -Rns yay --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-bin --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-git --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-debug --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-bin-debug --noconfirm 2>/dev/null || true; "
+        "rm -f /usr/bin/yay 2>/dev/null || true; "
+        "rm -rf '%1' 2>/dev/null || true; "
+        "pacman -S --needed %2 --noconfirm"
+    ).arg(homeCache, deps);
+
+    m_runner->run(step1, "Preparing system...", false, true, [this, variant](QString, int exitCode){
+        if (exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+        // --- GITHUB FALLBACK ROUTE ---
+        if (variant == "github") {
+            emit statusMessageChanged("Downloading pre-compiled release from GitHub...");
+            QString step2 = "rm -rf /tmp/yay_github && mkdir -p /tmp/yay_github && cd /tmp/yay_github && "
+            "curl -s https://api.github.com/repos/Jguer/yay/releases/latest | grep browser_download_url | grep _x86_64.tar.gz | cut -d '\"' -f 4 | wget -qi - && "
+            "tar -xzf *.tar.gz";
+
+            m_runner->run(step2, "Downloading release...", false, false, [this](QString, int exitCode){
+                if (exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+                emit statusMessageChanged("Waiting for password to install GitHub binary...");
+                QString step3 = "install -Dm755 /tmp/yay_github/*/yay /usr/bin/yay";
+
+                m_runner->run(step3, "Installing package...", false, true, [this](QString, int exitCode){
+                    emit operationFinished(exitCode == 0, isCancelled(exitCode));
+                });
+            });
+            return;
+        }
+
+        // --- STANDARD AUR ROUTE (yay & yay-bin) ---
+        emit statusMessageChanged(QString("Cloning %1 from AUR...").arg(variant));
+        QString repoUrl = QString("https://aur.archlinux.org/%1.git").arg(variant);
+        QString step2 = QString("rm -rf /tmp/%1 && git clone %2 /tmp/%1").arg(variant, repoUrl);
+
+        m_runner->run(step2, "Cloning repository...", false, false, [this, variant](QString, int exitCode){
+            if (exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+            emit statusMessageChanged(QString("Building %1 package (this may take a minute)...").arg(variant));
+
+            // Step 3: Explicitly disable debug package generation before compiling
+            QString step3 = QString("cd /tmp/%1 && echo 'options=(!debug)' >> PKGBUILD && makepkg -c --noconfirm").arg(variant);
+
+            m_runner->run(step3, "Building package...", false, false, [this, variant](QString, int exitCode){
+                if (exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+                emit statusMessageChanged("Waiting for password to install final package...");
+                QString step4 = QString("pacman -U /tmp/%1/*.pkg.tar.zst --noconfirm").arg(variant);
+
+                m_runner->run(step4, "Installing package...", false, true, [this](QString, int exitCode){
+                    emit operationFinished(exitCode == 0, isCancelled(exitCode));
+                });
+            });
+        });
     });
 }
 
 void PackageManager::uninstallYay() {
-    QString tempPath = writeScriptToTemp(":/scripts/uninstall_yay.sh");
-    if (tempPath.isEmpty()) return;
+    emit statusMessageChanged("Waiting for password to uninstall Yay...");
 
-    m_runner->run("bash " + tempPath, "Uninstalling yay...", false, false, [this](QString, int exitCode){
+    // Get the actual user's home directory so we don't accidentally clear /root/.cache
+    QString homeCache = QDir::homePath() + "/.cache/yay";
+
+    // Step 1: Attempt to remove all possible variants natively using -Rns to clean dependencies
+    // Step 2: Force remove the binary in case they used the untracked "GitHub" fallback
+    // Step 3: Nuke the build cache
+    QString cmd = QString(
+        "pacman -Rns yay --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-bin --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-git --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-debug --noconfirm 2>/dev/null || true; "
+        "pacman -Rns yay-bin-debug --noconfirm 2>/dev/null || true; "
+        "rm -f /usr/bin/yay 2>/dev/null || true; "
+        "rm -rf '%1' 2>/dev/null || true"
+    ).arg(homeCache);
+
+    m_runner->run(cmd, "Uninstalling yay...", false, true, [this](QString, int exitCode){
         emit operationFinished(exitCode == 0, isCancelled(exitCode));
     });
 }
@@ -184,22 +240,47 @@ void PackageManager::cleanAurLeftovers() {
 }
 
 void PackageManager::installOfflineUpdater() {
+    // Yay handles the build steps internally and will prompt for pkexec when ready
+    emit statusMessageChanged("Delegating build process to Yay...");
     QString cmd = "yay -S systemd-system-update-pacman --noconfirm --sudo pkexec --sudoflags \"\"";
+
     m_runner->run(cmd, "Installing offline update tool...", false, false, [this](QString, int exitCode){
         emit operationFinished(exitCode == 0, isCancelled(exitCode));
     });
 }
 
 void PackageManager::installOfflineUpdaterManual() {
-    QString script =
-    "echo \"Starting manual install...\" && WORK_DIR=$(mktemp -d) && cd \"$WORK_DIR\" && "
-    "git clone https://aur.archlinux.org/systemd-system-update-pacman.git && "
-    "cd systemd-system-update-pacman && "
-    "echo 'options=(!debug)' >> PKGBUILD && "
-    "makepkg -c --noconfirm && "
-    "pkexec pacman -U \"$PWD\"/*.pkg.tar.zst --noconfirm";
+    emit statusMessageChanged("Installing build dependencies...");
 
-    m_runner->run(script, "Manually installing offline update tool...", false, false, [this](QString, int exitCode){
-        emit operationFinished(exitCode == 0, isCancelled(exitCode));
+    // Step 1: Ensure git and base-devel are installed before trying to build
+    QString step1 = "pacman -S --needed git base-devel --noconfirm";
+
+    m_runner->run(step1, "Preparing system...", false, true, [this](QString, int exitCode){
+        if (exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+        emit statusMessageChanged("Cloning offline updater from AUR...");
+        QString step2 = "rm -rf /tmp/sysup && git clone https://aur.archlinux.org/systemd-system-update-pacman.git /tmp/sysup";
+
+        // Step 2: Clone Repo (User Space)
+        m_runner->run(step2, "Cloning repository...", false, false, [this](QString, int exitCode){
+            if(exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+            emit statusMessageChanged("Building offline update package...");
+
+            // Step 3: Compile and explicitly skip debug packages (User Space)
+            QString step3 = "cd /tmp/sysup && echo 'options=(!debug)' >> PKGBUILD && makepkg -c --noconfirm";
+
+            m_runner->run(step3, "Building package...", false, false, [this](QString, int exitCode){
+                if(exitCode != 0) { emit operationFinished(false, isCancelled(exitCode)); return; }
+
+                emit statusMessageChanged("Waiting for password to install final package...");
+                QString step4 = "pacman -U /tmp/sysup/*.pkg.tar.zst --noconfirm";
+
+                // Step 4: Install the final compiled package (Requires Root)
+                m_runner->run(step4, "Installing package...", false, true, [this](QString, int exitCode){
+                    emit operationFinished(exitCode == 0, isCancelled(exitCode));
+                });
+            });
+        });
     });
 }
