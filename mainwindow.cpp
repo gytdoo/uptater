@@ -130,6 +130,10 @@ void MainWindow::setupConnections()
             m_dashboardWidget->showInstalledList(lines, m_criticalPackages, static_cast<DashboardWidget::PackageFilter>(m_currentFilter));
         });
 
+        connect(m_packageManager, &PackageManager::statusMessageChanged, this, [this](const QString& msg){
+            m_dashboardWidget->updateBusyMessage(msg);
+        });
+
         // UI Components
         connect(m_buttonPanel, &ButtonPanel::checkClicked, this, &MainWindow::onCheckButtonClicked);
         connect(m_buttonPanel, &ButtonPanel::installClicked, this, &MainWindow::onSystemUpdate);
@@ -267,7 +271,8 @@ void MainWindow::createSettingsMenu()
 void MainWindow::runPackageTask(const QString& busyMessage, bool requiresTerminal, std::function<void()> task, std::function<void()> onFinish)
 {
     if (requiresTerminal) switchToTerminal(true);
-    else if (m_stack->currentIndex() == 0 && !m_viewingPackageList && !busyMessage.isEmpty()) {
+    // FIX: Removed the '!m_viewingPackageList' condition so the dashboard always shows the status screen
+    else if (m_stack->currentIndex() == 0 && !busyMessage.isEmpty()) {
         m_dashboardWidget->showBusyState(busyMessage);
     }
 
@@ -278,13 +283,24 @@ void MainWindow::runPackageTask(const QString& busyMessage, bool requiresTermina
 
         if (cancelled) {
             m_dashboardWidget->showOperationCancelled();
-            QTimer::singleShot(2500, this, [this](){ if (!m_viewingPackageList) restoreDashboardState(); });
+            QTimer::singleShot(2500, this, [this](){
+                // FIX: Return to the package list if that is where the user started
+                if (!m_viewingPackageList) restoreDashboardState();
+                else fetchPackageList(m_currentFilter);
+            });
         } else if (!success) {
             m_dashboardWidget->showErrorState();
             updateCheckButtonState();
         } else {
             if (onFinish) onFinish();
-            if (!m_viewingPackageList) restoreDashboardState();
+
+            if (!m_viewingPackageList) {
+                restoreDashboardState();
+            } else if (!m_runner->isBusy()) {
+                // FIX: If the operation is completely finished, automatically reload the package list
+                // to clear the busy screen and show any newly installed packages.
+                fetchPackageList(m_currentFilter);
+            }
         }
     });
 
