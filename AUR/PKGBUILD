@@ -19,7 +19,7 @@ conflicts=('uptater-bin' 'uptater-git')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/gytdoo/uptater/archive/refs/tags/v${pkgver}.tar.gz")
 
 # Generate this by running: updpkgsums
-sha256sums=('KINGDEDEDE')
+sha256sums=('182701a699f44acccec25a0aec78221d8182041d8b3d2d2aaa0dcaf598b38916')
 
 build() {
   # Configure the CMake project inside the downloaded source folder
