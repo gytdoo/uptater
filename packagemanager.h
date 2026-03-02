@@ -39,9 +39,9 @@ signals:
     void updatesCheckFinished(const QList<UpdatePackageInfo>& updates, bool errorFound);
     void packageListFetched(const QStringList& packages);
     void operationFinished(bool success, bool cancelled);
+    void statusMessageChanged(const QString& message);
 
 private:
-    QString writeScriptToTemp(const QString& resourcePath);
     bool isCancelled(int exitCode);
 
     CommandRunner* m_runner;
