@@ -52,6 +52,7 @@ m_rebootPending(false)
 
     m_terminalWindow = new TerminalWindow(this);
     m_runner = new CommandRunner(m_terminalWindow, this);
+    m_runner->setKeepBashHistory(m_keepBashHistory);
     m_packageManager = new PackageManager(m_runner, this);
     m_pacmanConfigManager = new PacmanConfigManager(this);
     m_reflectorManager = new ReflectorManager(this);
@@ -259,6 +260,16 @@ void MainWindow::createSettingsMenu()
     m_toggleOfflineAction = m_settingsMenu->addAction("Install Updates on Reboot");
     m_toggleOfflineAction->setCheckable(true);
     connect(m_toggleOfflineAction, &QAction::toggled, this, &MainWindow::onToggleOfflineUpdates);
+
+    // FIX: Add the new history setting right below the offline updates
+    m_keepHistoryAction = m_settingsMenu->addAction("Keep Uptater Bash History");
+    m_keepHistoryAction->setCheckable(true);
+    m_keepHistoryAction->setChecked(m_keepBashHistory);
+    connect(m_keepHistoryAction, &QAction::toggled, this, [this](bool c){
+        m_keepBashHistory = c;
+        m_runner->setKeepBashHistory(c);
+        saveSettings();
+    });
 
     updateMenuState();
     m_settingsMenu->addAction("Reset Critical Package List", this, &MainWindow::resetCriticalPackages);
@@ -677,6 +688,7 @@ void MainWindow::loadSettings() {
     m_autoCleanCache = m_settings->value("updates/cleanAfterUpdate", true).toBool();
     m_checkOnStartup = m_settings->value("updates/checkOnStartup", false).toBool();
     m_offlineUpdateEnabled = m_settings->value("updates/offlineUpdateEnabled", false).toBool();
+    m_keepBashHistory = m_settings->value("settings/keepBashHistory", false).toBool(); // Defaults to false
 }
 
 void MainWindow::saveSettings() {
@@ -684,4 +696,5 @@ void MainWindow::saveSettings() {
     m_settings->setValue("updates/cleanAfterUpdate", m_autoCleanCache);
     m_settings->setValue("updates/checkOnStartup", m_checkOnStartup);
     m_settings->setValue("updates/offlineUpdateEnabled", m_offlineUpdateEnabled);
+    m_settings->setValue("settings/keepBashHistory", m_keepBashHistory); // Save state
 }
