@@ -4,6 +4,7 @@ pkgrel=1
 pkgdesc="Clean, robust GUI for managing Arch Linux packages and AUR updates"
 arch=('x86_64')
 license=('GPL3')
+options=('!debug') # This prevents the creation of the uptater-debug package
 url="https://github.com/gytdoo/uptater"
 
 # Tools needed only for building
