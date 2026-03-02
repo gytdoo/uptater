@@ -33,12 +33,14 @@ void CommandRunner::run(const QString& command, const QString& description, bool
 
     emit commandStarted();
 
+    QString historyBlock = !m_keepBashHistory ? " set +o history; export HISTFILE=/dev/null; " : "";
+
     QString finalCmd = command;
     if (requiresRoot) {
         if (finalCmd.startsWith("sudo ")) {
             finalCmd = finalCmd.mid(5);
         }
-        QString escapedCmd = finalCmd;
+        QString escapedCmd = historyBlock + finalCmd;
         escapedCmd.replace("'", "'\\''");
         finalCmd = "pkexec sh -c '" + escapedCmd + "'";
     }
@@ -46,7 +48,9 @@ void CommandRunner::run(const QString& command, const QString& description, bool
     QString compositeCmd;
     QTextStream out(&compositeCmd);
 
-    out << "set +H; (";
+    if (!m_keepBashHistory) out << " ";
+
+    out << "set +H; " << historyBlock << "(";
     out << " export LC_ALL=C;";
     out << " trap 'touch \"" << m_endSignalFile << "\"' EXIT;";
 
