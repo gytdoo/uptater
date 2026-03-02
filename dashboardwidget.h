@@ -36,6 +36,7 @@ public:
     void showErrorState();
     void showOperationCancelled();
     void showBusyState(const QString& message);
+    void updateBusyMessage(const QString& message);
 
     void showInstalledList(const QStringList& packages, const QStringList& criticalPackages, PackageFilter currentFilter);
 
