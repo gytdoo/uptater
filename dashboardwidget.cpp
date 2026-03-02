@@ -380,3 +380,8 @@ void DashboardWidget::showBusyState(const QString& message)
     m_busyLabel->setText(message);
     m_contentStack->setCurrentIndex(2);
 }
+
+void DashboardWidget::updateBusyMessage(const QString& message)
+{
+    if (m_busyLabel) m_busyLabel->setText(message);
+}
