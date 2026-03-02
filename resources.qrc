@@ -1,7 +1,5 @@
 <!DOCTYPE RCC><RCC version="1.0">
     <qresource prefix="/">
-        <file alias="scripts/install_yay.sh">yay.sh</file>
-        <file alias="scripts/uninstall_yay.sh">uninstall_yay.sh</file>
         <file>icon.png</file>
     </qresource>
 </RCC>
